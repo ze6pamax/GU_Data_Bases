@@ -1,0 +1,197 @@
+--START--
+
+use vk;
+
+show tables;
+
+desc communities;
+desc media;
+desc media_types;
+desc messages;
+
+--работаю с таблицей usets: обновила дату юзеров, которые были обновлены раньше, Чем созданы
+
+select * from users limit 10;
+select * from users where created_at>updated_at;
+select count(*) from users where created_at>updated_at;
+update users set updated_at = current_timestamp  where created_at>updated_at;
+
+--работаю с profiles: обнаружила, что у меня таблица отличается о той, что была на вебинаре, добавила дополнительные поля в таблицу
+
+desc profiles;
+
+alter table profiles add photo_id INT UNSIGNED;
+alter table profiles add created_at datetime default now();
+alter table profiles add updated_at datetime default now() on update now();
+
+show tables;
+
+--работаю с messages: пытаюсь использовать предложенный вариант на вебинаре с рандомайзингом айди юзеров
+
+select * from messages limit 10;
+select max(user_id), min(user_id) from messages;
+select max(from_user_id), min(from_user_id) from messages;
+select max(to_user_id), min(to_user_id) from messages;
+desc profiles;
+desc messages;
+select round(rand()*100);
+select count(*) from messages;
+select * from messages limit 10;
+
+update messages set from_user_id=(200-round(rand()*200));
+select count(*) from messages where from_user_id=0;
+select count(*) from messages where to_user_id=0;
+desc media;
+
+--увидела, что у меня колонка называется по-другому, обновила
+
+alter table media change size file_size varchar(255);
+desc media;
+
+--хотела добиться, чтобы тип был INT, так и не получилось 
+
+alter table media modify file_size int unsigned;
+desc media;
+alter table media modify file_size int;
+desc media;
+alter table media modify file_size int unsigned;
+desc media;
+
+--обнаружила что filldb заменил тип у поля media
+
+alter table media modify metadata JSON;
+desc media;
+select * from media limit 10;
+
+--обновила user_id в media, чтобы придать рандомность 
+
+update media set user_id=1+round(rand()*200);
+select * from media limit 10;
+desc media_types;
+
+--появилась идея посмотреть уникальные имена в media_types, у меня их было около 40, удалила все занчения в таблице
+
+select distinct(name) from media_types;
+truncate media_types;
+
+--вставила новые, как на вебинаре
+
+insert into media_types (name) values ('photo'),('media'),('video');
+
+select * from media_types;
+
+--странно, но Mysql выдает значения в таблице отсортированные не по id, а по name 
+
+select * from media_types order by id asc;
+
+-- обнаружила, что ошиблась: вместо audio, созадала media, заменила
+
+update media_types set name='audio' where id=2;
+
+select * from media limit 10;
+
+-- обновила media_type_id, чтобы они были случайно расположены в таблице
+
+update media media_type_id=1+round(rand()*3);
+
+select * from media limit 10;
+
+
+update media set filename=concat("https://www.google.com/drive/",filename);
+
+--смотрю сколько у меня уникальных и каких filename в таблице
+
+select count(distinct(filename)) from media;
+
+--создаю таблицу (не временную) exte, где буду хранить раширения файлов
+
+create table exte (id serial, ext varchar(10));
+
+--вставляю в таблицу значения
+
+insert into exte (ext) values ('.avi'),('.mp3'),('.jpeg'),('.png'),('.midi');
+
+select * from exte;
+
+--обновляю filename в media
+
+select * from media limit 10;
+update media set filename=concat("https://www.google.com/drive/",filename);
+select * from media limit 10;
+update media set filename=concat(filename,(select ext from exte order by rand() limit 1));
+
+--увидела на вебинаре, что поле size переименвали в file_size, вероятно size зарезервированное слово
+
+select * from media limit 10;
+alter table media change size file_size int;
+desc media;
+
+--обновляю метадату по примеру с вебинара
+
+select * from media limit 10;
+update media set metadata = concat('{"owner":"',(select concat(first_name,' ', last_name) from users where id=user_id),'"}');
+select * from media limit 10;
+desc media;
+alter table media modify column metadata JSON;
+desc media;
+select metadata->"$.owner" from media limit 10;
+
+--обнаружила, что у меня NULL в json, пойду посмотрю, что в users, может там так же создались NULL
+
+show tables;
+select * from users limit 10;
+select count(*) from users where (first_name is null or last_name is null);
+
+--таких не оказалось. проблема оказалась в user_id, который был неправильно обновлён. у меня в таблице users всего 100 уникальных users, а я используя формулу для рандомайзинга сделала 200. отсюда null появились.
+
+select count(*) from users;
+update media set user_id=floor(1+rand()*100);
+
+-- исправила, запускаю ещё раз metadata апдейт
+
+update media set metadata = concat('{"owner":"',(select concat(first_name,' ', last_name) from users where id=user_id),'"}');
+select metadata->"$.owner" from media limit 10;
+select count(*) from media where metadata->"$.owner"=NULL;
+
+--поработаю с таблицей friendship, поперепутаю юзеров, проверю дату
+
+desc friendship;
+select * from friendship limit 5;
+update friendship set user_id=floor(1+rand()*100);
+update friendship set friend_id=floor(1+rand()*100);
+select * from friendship limit 5;
+update friendship set confirmed_at = now() where confirmed_at < requested_at;
+select * from friendship limit 5;
+
+--поработаю с талицей friendship_statuses: удалю старые статусы, создам новые и добавлю ещё парочку, отличных от вебинара
+
+truncate friendship_statuses;
+insert into friendship_statuses (name) values ('requested'),('confirmed'),('rejected');
+select * from friendship_statuses;
+select * from friendship limit 5;
+insert into friendship_statuses (name) values ('deleted'),('blocked');
+select * from friendship limit 5;
+select * from friendship_statuses;
+
+--поработаю с таблицей communities: перепутаю юзеров. таблицу communities делала заново в filldb, так как в старой версии у меня получились слишком длинные названия communities, я использовала предложения, а не слова. Создала сразу 20, ничего не удаляла в mysql в этой таблице
+
+desc communities;
+select * from communities;
+show tables;
+select * from communities_users;
+update communities_users set user_id=floor(1+rand()*100);
+select * from communities_users;
+update communities_users set community_id=floor(1+rand()*20);
+select * from communities_users;
+
+--поработаю с message. модифицировала таблицу как было предложено на вебинаре
+
+select * messages limit 10;
+select * from messages limit 3;
+desc messages;
+alter table messages modify column community_id int unsigned;
+desc messages;
+alter table messages modify column to_user_id int unsigned;
+desc messages;
+
+--END--
