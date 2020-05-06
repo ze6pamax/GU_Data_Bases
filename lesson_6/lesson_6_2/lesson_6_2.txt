@@ -1,0 +1,52 @@
+========================================
+
+2. Создать и заполнить таблицы лайков и постов.
+
+========================================
+
+Таблицу лайков мы заполняли на вебинаре. Таблицу постов заполнила с помощью filldb.info, см. posts_filldb_screenshot.png
+Заливаю дамп с filldb.info с единственной таблицей posts в базу:
+
+mysql vk < posts.filldb.dump.sql
+
+Чтобы в таблице posts была целостность между таблицам users и communities сделаю несколько update'ов:
+
+mysql> update posts set community_id = (select community_id from communities_users where communities_users.user_id=posts.user_id order by rand() limit 1);
+Query OK, 97 rows affected (0.06 sec)
+Rows matched: 100  Changed: 97  Warnings: 0
+
+Посмотрела первые 5 строк, увидела, что для user_id в filldb сгенирировались не случайные значения, а значения по порядку. Обновлю user_id и ещё раз community id:
+
+mysql> update posts set user_id=floor(1+rand()*100);
+Query OK, 96 rows affected (0.05 sec)
+Rows matched: 100  Changed: 96  Warnings: 0
+
+mysql> update posts set community_id = (select community_id from communities_users where communities_users.user_id=posts.user_id order by rand() limit 1);
+Query OK, 88 rows affected (0.04 sec)
+Rows matched: 100  Changed: 88  Warnings: 0
+
+Теперь таблица выглядит лучше.
+
+Поработаю над media_id:
+
+media_id также заполнилось не случайными значениями, а значениями по порядку.
+просто проставить случайные значения не правильно, нужно завязать с таблицей media.
+
+mysql> update posts set media_id = (select id from media where media.user_id=posts.user_id order by rand() limit 1);
+Query OK, 6 rows affected (0.01 sec)
+Rows matched: 100  Changed: 6  Warnings: 0
+
+увидела что часть media_id получили значения null, решила посмотреть сколько таких записей, получилось около половины. Оставлю! Неактивные у меня пользователи :).
+
+mysql> select count(*),if(media_id is null,0,1) as flag from posts group by flag;
++----------+------+
+| count(*) | flag |
++----------+------+
+|       41 |    0 |
+|       59 |    1 |
++----------+------+
+ 
+Прикладываю дамп обновлённой таблицы posts: vk.posts_upd.dump.sql , который получила с помощью компанды:
+
+
+mysqldump -u zebramax -p vk posts > ./vk.posts_upd.dump.sql

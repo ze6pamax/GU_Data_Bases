@@ -1,0 +1,178 @@
+===================================================
+1. Создать все необходимые внешние ключи и диаграмму отношений
+
+===================================================
+
+1) проверить все таблицы, в которых ещё нет ключей
+
+show tables;
+desc <table_name>;
+
+нашлось 4 табилцы: friendship, likes, media, posts,communities_users
+
+2) прописываю ключи для указанных таблиц
+
+--frienship
+
+mysql> desc friendship;
++--------------+------------------+------+-----+-------------------+-------+
+| Field        | Type             | Null | Key | Default           | Extra |
++--------------+------------------+------+-----+-------------------+-------+
+| user_id      | int(10) unsigned | NO   | PRI | NULL              |       |
+| friend_id    | int(10) unsigned | NO   | PRI | NULL              |       |
+| status_id    | int(10) unsigned | NO   |     | NULL              |       |
+| requested_at | datetime         | YES  |     | CURRENT_TIMESTAMP |       |
+| confirmed_at | datetime         | YES  |     | NULL              |       |
++--------------+------------------+------+-----+-------------------+-------+
+
+--В этой таблице необходимо добавить ключ на status_id,user_id,friend_id.
+
+ALTER TABLE friendship 
+	ADD CONSTRAINT friendship_status_id_fk 
+	FOREIGN KEY (status_id) REFERENCES friendship_statuses(id),
+        ADD CONSTRAINT friendship_user_id_fk
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        ADD CONSTRAINT friendship_friend_id_fk
+        FOREIGN KEY (friend_id) REFERENCES users(id)
+;
+
+--Смотрим что получилось:
+
+mysql> show keys from friendship;
++------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table      | Non_unique | Key_name                | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| friendship |          0 | PRIMARY                 |            1 | user_id     | A         |          66 |     NULL | NULL   |      | BTREE      |         |               |
+| friendship |          0 | PRIMARY                 |            2 | friend_id   | A         |         100 |     NULL | NULL   |      | BTREE      |         |               |
+| friendship |          1 | friendship_status_id_fk |            1 | status_id   | A         |           5 |     NULL | NULL   |      | BTREE      |         |               |
++------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+3 rows in set (0.00 sec)
+
+--likes
+
+mysql> desc likes;
++----------------+------------------+------+-----+-------------------+----------------+
+| Field          | Type             | Null | Key | Default           | Extra          |
++----------------+------------------+------+-----+-------------------+----------------+
+| id             | int(10) unsigned | NO   | PRI | NULL              | auto_increment |
+| user_id        | int(10) unsigned | NO   |     | NULL              |                |
+| target_id      | int(10) unsigned | NO   |     | NULL              |                |
+| target_type_id | int(10) unsigned | NO   |     | NULL              |                |
+| created_at     | datetime         | YES  |     | CURRENT_TIMESTAMP |                |
++----------------+------------------+------+-----+-------------------+----------------+
+
+--Здесь нам надо сделать ключи для user_id, target_id, target_type_id
+
+--user_id & target_type_id:
+
+ALTER TABLE likes
+        ADD CONSTRAINT likes_user_id_fk
+        FOREIGN KEY (user_id) REFERENCES users(id),
+	ADD CONSTRAINT likes_target_type_id_fk
+	FOREIGN KEY (target_type_id) REFERENCES target_types(id);
+
+--смотрим результат
+
+mysql> show keys from likes;
++-------+------------+-------------------------+--------------+----------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name                | Seq_in_index | Column_name    | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+-------------------------+--------------+----------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| likes |          0 | PRIMARY                 |            1 | id             | A         |         200 |     NULL | NULL   |      | BTREE      |         |               |
+| likes |          1 | likes_user_id_fk        |            1 | user_id        | A         |          83 |     NULL | NULL   |      | BTREE      |         |               |
+| likes |          1 | likes_target_type_id_fk |            1 | target_type_id | A         |           4 |     NULL | NULL   |      | BTREE      |         |               |
++-------+------------+-------------------------+--------------+----------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+
+--для target_id я не понимаю как сделать внешний ключ, если у нас target_id - это id из любой из 4-х таблиц: media, posts, users, messages
+--тут важно понимать что с этим ключом может быть такая ситуация: в таблице media есть id под номером 1020, а в таблице users можем и не быть такого id. Т.О. нельзя поставить ограничение на target_id в этой таблице.
+
+--вот такая конструкция не работает
+ALTER TABLE likes
+        ADD CONSTRAINT likes_target_id_fk
+        FOREIGN KEY (target_id,target_type_id) REFERENCES (posts(id),media(id),users(id),messages(id));
+
+--нашла на stackoverflow похожую ситуацию, но тут вместе отдельной таблицы target_types используют поле enum
+https://stackoverflow.com/questions/10843800/mysql-one-column-referenced-to-multiple-table
+
+--следующая таблица media
+
+--смотрим для каких полей необходимо сделать ключи:
+mysql> desc media;
++---------------+------------------+------+-----+-------------------+-----------------------------+
+| Field         | Type             | Null | Key | Default           | Extra                       |
++---------------+------------------+------+-----+-------------------+-----------------------------+
+| id            | int(10) unsigned | NO   | PRI | NULL              | auto_increment              |
+| media_type_id | int(10) unsigned | NO   |     | NULL              |                             |
+| user_id       | int(10) unsigned | NO   |     | NULL              |                             |
+| filename      | varchar(255)     | NO   |     | NULL              |                             |
+| file_size     | int(11)          | YES  |     | NULL              |                             |
+| metadata      | json             | YES  |     | NULL              |                             |
+| created_at    | datetime         | YES  |     | CURRENT_TIMESTAMP |                             |
+| updated_at    | datetime         | YES  |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |
++---------------+------------------+------+-----+-------------------+-----------------------------+
+
+--это поля media_type_id и user_id. добавим ключи:
+
+ALTER TABLE media
+        ADD CONSTRAINT media_user_id_fk
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        ADD CONSTRAINT media_media_type_id_fk
+        FOREIGN KEY (media_type_id) REFERENCES media_types(id);
+
+--проверяем
+
+mysql> show keys from media;
++-------+------------+------------------------+--------------+---------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name               | Seq_in_index | Column_name   | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+------------------------+--------------+---------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| media |          0 | PRIMARY                |            1 | id            | A         |         101 |     NULL | NULL   |      | BTREE      |         |               |
+| media |          1 | media_user_id_fk       |            1 | user_id       | A         |          66 |     NULL | NULL   |      | BTREE      |         |               |
+| media |          1 | media_media_type_id_fk |            1 | media_type_id | A         |           3 |     NULL | NULL   |      | BTREE      |         |               |
++-------+------------+------------------------+--------------+---------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+
+--перехожу к последней таблице posts
+
+mysql> desc posts;
++--------------+------------------+------+-----+-------------------+-----------------------------+
+| Field        | Type             | Null | Key | Default           | Extra                       |
++--------------+------------------+------+-----+-------------------+-----------------------------+
+| id           | int(10) unsigned | NO   | PRI | NULL              | auto_increment              |
+| user_id      | int(10) unsigned | NO   |     | NULL              |                             |
+| community_id | int(10) unsigned | YES  |     | NULL              |                             |
+| head         | varchar(255)     | YES  |     | NULL              |                             |
+| body         | text             | NO   |     | NULL              |                             |
+| media_id     | int(10) unsigned | YES  |     | NULL              |                             |
+| created_at   | datetime         | YES  |     | CURRENT_TIMESTAMP |                             |
+| updated_at   | datetime         | YES  |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |
++--------------+------------------+------+-----+-------------------+-----------------------------+
+
+--здесь нужно добавить ключи для community_id, user_id, media_id
+
+ALTER TABLE posts
+        ADD CONSTRAINT posts_user_id_fk
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        ADD CONSTRAINT posts_media_id_fk
+        FOREIGN KEY (media_id) REFERENCES media(id),
+	ADD CONSTRAINT posts_community_id_fk
+	FOREIGN KEY (community_id) REFERENCES communities(id);
+
+--проверяем
+
+mysql> show keys from posts;
++-------+------------+-----------------------+--------------+--------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name              | Seq_in_index | Column_name  | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+-----------------------+--------------+--------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| posts |          0 | PRIMARY               |            1 | id           | A         |           0 |     NULL | NULL   |      | BTREE      |         |               |
+| posts |          1 | posts_user_id_fk      |            1 | user_id      | A         |           0 |     NULL | NULL   |      | BTREE      |         |               |
+| posts |          1 | posts_media_id_fk     |            1 | media_id     | A         |           0 |     NULL | NULL   | YES  | BTREE      |         |               |
+| posts |          1 | posts_community_id_fk |            1 | community_id | A         |           0 |     NULL | NULL   | YES  | BTREE      |         |               |
++-------+------------+-----------------------+--------------+--------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+
+--последняя таблца communities_users:
+
+ALTER TABLE communities_users
+        ADD CONSTRAINT communities_users_user_id_fk
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        ADD CONSTRAINT communities_users_community_id_fk
+        FOREIGN KEY (community_id) REFERENCES communities(id);
+
+--ГОТОВО! Прикладываю dump этой базы vk.lesson6.task1.dump.sql

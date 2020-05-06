@@ -1,0 +1,96 @@
+===========================================
+
+5. Найти 10 пользователей, которые проявляют наименьшую активность в
+использовании социальной сети
+(критерии активности необходимо определить самостоятельно).
+
+===========================================
+
+--пусть активность в использовании социальной сети - это сумма количества сообщений, постов, медиа, тогда получим
+--каждую активность по-отдельности
+
+select users.id, 
+	(select count(posts.id) from posts where user_id=users.id) as posts,
+	(select count(messages.id) from messages where from_user_id=users.id or to_user_id=users.id) as messages,
+	(select count(media.id) from media where media.user_id=users.id) as media
+from 
+	users 
+group by 
+	users.id 
+limit 10;
+
++----+-------+----------+-------+
+| id | posts | messages | media |
++----+-------+----------+-------+
+|  1 |     2 |        6 |     0 |
+|  2 |     0 |        3 |     3 |
+|  3 |     1 |        7 |     1 |
+|  4 |     0 |        4 |     2 |
+|  5 |     2 |        5 |     1 |
+|  6 |     0 |        0 |     0 |
+|  7 |     0 |        0 |     1 |
+|  8 |     1 |        4 |     1 |
+|  9 |     1 |        2 |     1 |
+| 10 |     1 |        1 |     1 |
++----+-------+----------+-------+
+
+--а теперь подсчитаем сумму активностей и найдем 10 самых неактивных участников соц сети:
+
+select users.id, 
+        ((select count(posts.id) from posts where user_id=users.id)+
+        (select count(messages.id) from messages where from_user_id=users.id or to_user_id=users.id)+
+        (select count(media.id) from media where media.user_id=users.id)) as total_activities
+from 
+        users 
+group by 
+        users.id
+order by 
+	total_activities asc 
+limit 10;
+
++----+------------------+
+| id | total_activities |
++----+------------------+
+|  6 |                0 |
+|  7 |                1 |
+| 20 |                1 |
+| 77 |                2 |
+| 94 |                2 |
+| 99 |                2 |
+| 41 |                2 |
+| 80 |                3 |
+| 10 |                3 |
+| 40 |                3 |
++----+------------------+
+
+--улучшим запрос и добавим имя и фамилию нашему пользователю вместо id
+
+select users.id,
+	concat(last_name," ",first_name) as name,
+        ((select count(posts.id) from posts where user_id=users.id)+
+        (select count(messages.id) from messages where from_user_id=users.id or to_user_id=users.id)+
+        (select count(media.id) from media where media.user_id=users.id)) as total_activities
+from
+        users
+group by
+        users.id
+order by
+        total_activities asc
+limit 10;
+
++----+---------------------+------------------+
+| id | name                | total_activities |
++----+---------------------+------------------+
+|  6 | Hudson Mekhi        |                0 |
+|  7 | Crooks Jaime        |                1 |
+| 20 | Nikolaus Ervin      |                1 |
+| 99 | Luettgen Rocky      |                2 |
+| 94 | Gutmann Jaunita     |                2 |
+| 77 | Schamberger Rahsaan |                2 |
+| 41 | Haley Lance         |                2 |
+| 19 | Beier Mervin        |                3 |
+| 49 | Jacobson Oswaldo    |                3 |
+| 97 | Wisozk Makenna      |                3 |
++----+---------------------+------------------+
+
+--ГОТОВО!
