@@ -1,0 +1,113 @@
+==============================
+
+3. (по желанию) Пусть имеется таблица рейсов flights (id, from, to) и таблица городов cities (label, name).
+Поля from, to и label содержат английские названия городов, поле name — русское. 
+Выведите список рейсов flights с русскими названиями городов.
+
+==============================
+
+--создаю базу travel
+
+mysql> create database travel;
+
+--выбираю базу
+
+mysql> use travel;
+
+--создаю таблицу flights
+
+mysql> create table flights (id serial primary key, _from varchar(255), _to varchar(255));
+
+--создаю таблицу cities
+
+mysql> create table cities (_lable varchar(255), _name varchar(255));
+
+--наполняю таблицу flights значениями
+
+mysql> insert into flights values (NULL,'moscow','omsk'),(NULL,'novgorod','kazan'),(NULL,'irkutsk','moscow'),(NULL,'omsk','irkutsk'),(NULL,'moscow','kazan');
+
+--наполняю таблицу cities значениями
+
+mysql> insert into cities values ('moscow','Москва'),('irkutsk','Иркутск'),('novgorod','Новгород'),('kazan','Казань'),('omsk','Омск');
+ERROR 1366 (HY000): Incorrect string value: '\xD0\x9C\xD0\xBE\xD1\x81...' for column '_name' at row 1
+
+PS я не могу вставлять почему-то в свою базу значения на русском языке, поэтому я транлитирировала значения в cities._name
+Видимо что-то с кодировкой, но у меня не получилось разобраться как это исправить.
+
+mysql> insert into cities values ('moscow','Moskva'),('irkutsk','Irkutsk'),('novgorod','Novgorod'),('kazan','Kazan'),('omsk','Omsk');
+
+--вот 2 таблицы
+
+mysql> select * from flights;
++----+----------+---------+
+| id | _from    | _to     |
++----+----------+---------+
+|  1 | moscow   | omsk    |
+|  2 | novgorod | kazan   |
+|  3 | irkutsk  | moscow  |
+|  4 | omsk     | irkutsk |
+|  5 | moscow   | kazan   |
++----+----------+---------+
+5 rows in set (0.00 sec)
+
+mysql> select * from cities;
++----------+----------+
+| _lable   | _name    |
++----------+----------+
+| moscow   | Moskva   |
+| irkutsk  | Irkutsk  |
+| novgorod | Novgorod |
+| kazan    | Kazan    |
+| omsk     | Omsk     |
++----------+----------+
+5 rows in set (0.00 sec)
+
+--теперь пишу запрос: мой вариант чтобы перекодировть каждое поле в flights в название на русском из cities нужно сделать по запросу отдельно на каждое поле,
+--обязательно выбирать ключ (id), чтобы потом в join соединить таблицы
+--так как у нас id в двух новых таблицах одинаковые, то вместо on можно использовать ключевое слово using
+--для красоты ещё отсортировала id, но это только чтобы добиться полного сходства
+
+
+--сравниваем результаты
+
+mysql> select * from flights;
++----+----------+---------+
+| id | _from    | _to     |
++----+----------+---------+
+|  1 | moscow   | omsk    |
+|  2 | novgorod | kazan   |
+|  3 | irkutsk  | moscow  |
+|  4 | omsk     | irkutsk |
+|  5 | moscow   | kazan   |
++----+----------+---------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT
+    ->         id,
+    ->         _from_rus._name,
+    ->         _to_rus._name
+    -> FROM
+    ->         (SELECT id,_name
+    ->         FROM flights
+    ->         JOIN cities
+    ->         ON flights._from=cities._lable) as _from_rus
+    -> JOIN
+    ->         (SELECT id,_name
+    ->         FROM flights
+    ->         JOIN cities
+    ->         ON flights._to=cities._lable) as _to_rus
+    -> USING(id)
+    -> ORDER BY
+    ->         id;
++----+----------+---------+
+| id | _name    | _name   |
++----+----------+---------+
+|  1 | Moskva   | Omsk    |
+|  2 | Novgorod | Kazan   |
+|  3 | Irkutsk  | Moskva  |
+|  4 | Omsk     | Irkutsk |
+|  5 | Moskva   | Kazan   |
++----+----------+---------+
+5 rows in set (0.00 sec)
+
+--ГОТОВО!
