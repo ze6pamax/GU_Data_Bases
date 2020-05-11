@@ -1,0 +1,50 @@
+===========================================
+
+3. Найти 10 пользователей, которые проявляют наименьшую активность в
+использовании социальной сети
+(критерии активности необходимо определить самостоятельно).
+
+===========================================
+
+--пусть активность в использовании социальной сети - это сумма количества сообщений, постов, медиа, тогда получим
+
+select
+	users.id, 
+	concat(last_name," ",first_name) as name,
+	count(distinct(posts.id))+count(distinct(messages.id))+count(distinct(media.id)) as total_activities	
+from
+	users 
+left join
+	media
+on
+	users.id=media.user_id
+left join
+	posts
+on
+	users.id=posts.user_id
+left join
+	messages
+on
+	users.id=messages.from_user_id
+	or
+	users.id=messages.to_user_id
+group by 
+	users.id 
+order by
+	total_activities
+limit 10;
+
++----+---------------------+------------------+
+| id | name                | total_activities |
++----+---------------------+------------------+
+|  6 | Hudson Mekhi        |                0 |
+|  7 | Crooks Jaime        |                1 |
+| 20 | Nikolaus Ervin      |                1 |
+| 41 | Haley Lance         |                2 |
+| 99 | Luettgen Rocky      |                2 |
+| 94 | Gutmann Jaunita     |                2 |
+| 77 | Schamberger Rahsaan |                2 |
+| 10 | Kozey Magali        |                3 |
+| 74 | Price Margot        |                3 |
+| 40 | Lockman Gordon      |                3 |
++----+---------------------+------------------+

@@ -1,0 +1,26 @@
+===================================
+2. Определить кто больше поставил лайков (всего) - мужчины или женщины?
+===================================
+
+
+select
+	if(gender='f','Female','Male') as WHO,
+	count(likes.user_id) as total_likes
+from
+	likes
+join
+	profiles
+on
+	likes.user_id=profiles.user_id
+group by
+	WHO
+order by
+	total_likes desc
+limit 1
+;
+
++--------+-------------+
+| WHO    | total_likes |
++--------+-------------+
+| Female |         108 |
++--------+-------------+
