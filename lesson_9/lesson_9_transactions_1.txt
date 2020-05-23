@@ -1,0 +1,75 @@
+=========================
+1.В базе данных shop и sample присутствуют одни и те же таблицы, учебной базы данных. Переместите запись id = 1 из таблицы shop.users в таблицу sample.users. Используйте транзакции.
+
+=========================
+
+mysql> use shop;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++----------------------+
+| Tables_in_shop       |
++----------------------+
+| cat                  |
+| catalogs             |
+| discounts            |
+| orders               |
+| orders_products      |
+| products             |
+| storehouses          |
+| storehouses_products |
+| users                |
++----------------------+
+9 rows in set (0.00 sec)
+
+mysql> use sample;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++----------------------+
+| Tables_in_sample     |
++----------------------+
+| cat                  |
+| catalogs             |
+| discounts            |
+| orders               |
+| orders_products      |
+| products             |
+| storehouses          |
+| storehouses_products |
+| users                |
++----------------------+
+9 rows in set (0.00 sec)
+
+mysql> start transaction;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> insert into sample.users
+    -> select * from shop.users 
+    -> where id=1;
+Query OK, 1 row affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql> commit;
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> select * from sample.users;
++----+------------------+-------------+---------------------+---------------------+
+| id | name             | birthday_at | created_at          | updated_at          |
++----+------------------+-------------+---------------------+---------------------+
+|  1 | Геннадий         | 1990-10-05  | 2020-05-01 00:50:21 | 2020-05-01 00:50:21 |
++----+------------------+-------------+---------------------+---------------------+
+1 row in set (0.00 sec)
+
+mysql> select * from shop.users where id=1;
++----+------------------+-------------+---------------------+---------------------+
+| id | name             | birthday_at | created_at          | updated_at          |
++----+------------------+-------------+---------------------+---------------------+
+|  1 | Геннадий         | 1990-10-05  | 2020-05-01 00:50:21 | 2020-05-01 00:50:21 |
++----+------------------+-------------+---------------------+---------------------+
+1 row in set (0.00 sec)
+

@@ -1,0 +1,76 @@
+==========================
+1. Создайте двух пользователей которые имеют доступ к базе данных shop. 
+Первому пользователю shop_read должны быть доступны только запросы на чтение данных, 
+второму пользователю shop — любые операции в пределах базы данных shop.
+
+==========================
+
+Смотрю какой пользователь работает с mysql:
+
+mysql> select user();
++--------------------+
+| user()             |
++--------------------+
+| zebramax@localhost |
++--------------------+
+1 row in set (0.00 sec)
+
+Проверяю права:
+
+mysql> show grants;
++------------------------------------------------------------------+
+| Grants for zebramax@localhost                                    |
++------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'zebramax'@'localhost'            |
+| GRANT ALL PRIVILEGES ON `example`.* TO 'zebramax'@'localhost'    |
+| GRANT ALL PRIVILEGES ON `sample`.* TO 'zebramax'@'localhost'     |
+| GRANT ALL PRIVILEGES ON `vk`.* TO 'zebramax'@'localhost'         |
+| GRANT ALL PRIVILEGES ON `shop`.* TO 'zebramax'@'localhost'       |
+| GRANT ALL PRIVILEGES ON `mediafiles`.* TO 'zebramax'@'localhost' |
+| GRANT ALL PRIVILEGES ON `compshop`.* TO 'zebramax'@'localhost'   |
++------------------------------------------------------------------+
+7 rows in set (0.00 sec)
+
+Нет прав на изменение прав других пользователей, поэтому сначала я поменяю права своему пользователю:
+
+
+mysql> grant grant option on *.* to 'zebramax'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+Проверяю права еще раз:
+
+mysql> show grants;
++-------------------------------------------------------------------------+
+| Grants for zebramax@localhost                                           |
++-------------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'zebramax'@'localhost' WITH GRANT OPTION |
+| GRANT ALL PRIVILEGES ON `example`.* TO 'zebramax'@'localhost'           |
+| GRANT ALL PRIVILEGES ON `sample`.* TO 'zebramax'@'localhost'            |
+| GRANT ALL PRIVILEGES ON `vk`.* TO 'zebramax'@'localhost'                |
+| GRANT ALL PRIVILEGES ON `shop`.* TO 'zebramax'@'localhost'              |
+| GRANT ALL PRIVILEGES ON `mediafiles`.* TO 'zebramax'@'localhost'        |
+| GRANT ALL PRIVILEGES ON `compshop`.* TO 'zebramax'@'localhost'          |
++-------------------------------------------------------------------------+
+7 rows in set (0.00 sec)
+
+Теперь права есть, можно создавать пользователей по задаче, назначать им права.
+
+Создаю пользователей shop_read, shop:
+
+mysql> create user shop_read identified with sha256_password by 'passread';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> create user shop identified with sha256_password by 'passshop';
+Query OK, 0 rows affected (0.00 sec)
+
+Назначаю права:
+ - shop_read - только чтение (select)
+ - shop - все права в рамках базы shop.
+
+mysql> grant select on shop.* to shop_read;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> grant ALL on shop.* to shop;
+Query OK, 0 rows affected (0.00 sec)
+
+ГОТОВО!

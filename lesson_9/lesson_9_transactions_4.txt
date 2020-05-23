@@ -1,0 +1,53 @@
+=======================
+4. (по желанию) Пусть имеется любая таблица с календарным полем created_at. Создайте запрос, который удаляет устаревшие записи из таблицы, оставляя только 5 самых свежих записей.
+
+=======================
+
+mysql> drop table if exists tbl;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> drop table if exists tbl2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> create temporary table tbl (created_at date);
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> create temporary table tbl2 (created_at date);
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> insert into tbl select birthday from profiles;
+Query OK, 100 rows affected (0.00 sec)
+Records: 100  Duplicates: 0  Warnings: 0
+
+mysql> insert into tbl2 select distinct(created_at) from tbl order by created_at desc limit 5;
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> delete from tbl where created_at not in (select created_at from tbl2);
+Query OK, 94 rows affected (0.01 sec)
+
+mysql> select * from tbl;
++------------+
+| created_at |
++------------+
+| 2020-03-25 |
+| 2020-04-10 |
+| 2020-03-22 |
+| 2020-03-03 |
+| 2020-04-18 |
+| 2020-04-18 |
++------------+
+6 rows in set (0.00 sec)
+
+mysql> select * from tbl2;
++------------+
+| created_at |
++------------+
+| 2020-04-18 |
+| 2020-04-10 |
+| 2020-03-25 |
+| 2020-03-22 |
+| 2020-03-03 |
++------------+
+5 rows in set (0.00 sec)
+

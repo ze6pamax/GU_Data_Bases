@@ -1,0 +1,35 @@
+=========================
+3. (по желанию) Напишите хранимую функцию для вычисления произвольного числа Фибоначчи.
+Числами Фибоначчи называется последовательность в которой число равно сумме двух предыдущих чисел.
+Вызов функции FIBONACCI(10) должен возвращать число 55.
+=========================
+
+
+CREATE PROCEDURE FIBONACCI(IN nr INT)
+BEGIN
+	DECLARE i INT DEFAULT 1;
+	DECLARE sum1 INT DEFAULT 0;
+	DECLARE sum2 INT DEFAULT 1;
+	DECLARE fib INT DEFAULT 0;
+	SET i = nr;
+	REPEAT 
+		SET fib = sum1 + sum2;
+		SET sum2 = sum1;
+		SET sum1 = fib;
+		SET i = i - 1;
+		UNTIL i <= 0
+	END REPEAT;
+SELECT fib AS result;
+END//
+
+
+mysql> CALL FIBONACCI(10)//
++--------+
+| result |
++--------+
+|     55 |
++--------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+

@@ -1,0 +1,50 @@
+===========================
+2. (по желанию) Пусть имеется таблица accounts содержащая три столбца id, name, password, 
+содержащие первичный ключ, имя пользователя и его пароль. Создайте представление username таблицы accounts, 
+предоставляющий доступ к столбца id и name. Создайте пользователя user_read, который бы не имел доступа к таблице accounts, 
+однако, мог бы извлекать записи из представления username.
+
+===========================
+
+Запросы:
+
+use shop;
+create table accounts (id int, name varchar(255), password varchar(40));
+create view username as select id,name from accounts;
+create user user_read identified with sha256_password by 'pass1';
+grant usage on shop.accounts to user_read;
+grant select on shop.username to user_read;
+
+Проверяем:
+
+mysql> select user();
++---------------------+
+| user()              |
++---------------------+
+| user_read@localhost |
++---------------------+
+1 row in set (0.00 sec)
+
+mysql> show grants;
++------------------------------------------------------+
+| Grants for user_read@%                               |
++------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'user_read'@'%'                |
+| GRANT SELECT ON `shop`.`username` TO 'user_read'@'%' |
++------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+mysql> use shop;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+
+mysql> select * from accounts;
+ERROR 1142 (42000): SELECT command denied to user 'user_read'@'localhost' for table 'accounts'
+
+mysql> select * from username;
+Empty set (0.00 sec)
+
+
+Все правильно. Готово!
