@@ -1,0 +1,97 @@
+=========================
+1.  Создайте таблицу logs типа Archive. Пусть при каждом создании записи в таблицах users, catalogs и products 
+в таблицу logs помещается время и дата создания записи, название таблицы, идентификатор первичного ключа и содержимое поля name.
+=========================
+
+--создаем таблицу
+
+mysql> create table logs (created_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,tablename varchar(50),target_id int,target_name varchar(255)) comment = 'Table for logging changes into database shop' engine=Archive;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> show create table logs;
++-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Table | Create Table                                                                                                                                                                                                                                                                                                              |
++-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| logs  | CREATE TABLE `logs` (
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `tablename` varchar(50) DEFAULT NULL,
+  `target_id` int(11) DEFAULT NULL,
+  `target_name` varchar(255) DEFAULT NULL
+) ENGINE=ARCHIVE DEFAULT CHARSET=latin1 COMMENT='Table for logging changes into database shop' |
++-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+--создаем триггеры, которые будут вставлять значения
+
+--users
+create trigger inserted_from_users_to_logs after insert on users
+for each row
+begin
+set @tname='users';
+insert into logs (created_at,tablename,target_name,target_id) values (now(),@tname,new.name,new.id);
+end//
+
+--catalogs
+create trigger inserted_from_catalogs_to_logs after insert on catalogs
+for each row
+begin
+set @tname='catalogs';
+insert into logs (created_at,tablename,target_name,target_id) values (now(),@tname,new.name,new.id);
+end//
+
+--products
+create trigger inserted_from_products_to_logs after insert on products
+for each row
+begin
+set @tname='products';
+insert into logs (created_at,tablename,target_name,target_id) values (now(),@tname,new.name,new.id);
+end//
+
+--Примеры:
+
+--users
+
+mysql> insert into users (name,birthday_at,created_at,updated_at) values ('maria','1980-05-16',now(),now());
+    -> //
+Query OK, 1 row affected (0.01 sec)
+
+mysql> select * from logs
+    -> //
++---------------------+-----------+-----------+-------------+
+| created_at          | tablename | target_id | target_name |
++---------------------+-----------+-----------+-------------+
+| 2020-05-27 23:21:53 | users     |        21 | maria       |
++---------------------+-----------+-----------+-------------+
+1 row in set (0.01 sec)
+
+--catalogs
+
+mysql> insert into catalogs values (NULL,'printer');
+Query OK, 1 row affected (0.03 sec)
+
+mysql> select * from logs;
++---------------------+-----------+-----------+-------------+
+| created_at          | tablename | target_id | target_name |
++---------------------+-----------+-----------+-------------+
+| 2020-05-27 23:21:53 | users     |        21 | maria       |
+| 2020-05-27 23:26:22 | catalogs  |         6 | printer     |
++---------------------+-----------+-----------+-------------+
+2 rows in set (0.03 sec)
+
+
+--products
+
+mysql> insert into products (name,description,catalog_id) values ('Inter core i7','popular processor',1);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> select * from logs;
++---------------------+-----------+-----------+---------------+
+| created_at          | tablename | target_id | target_name   |
++---------------------+-----------+-----------+---------------+
+| 2020-05-27 23:21:53 | users     |        21 | maria         |
+| 2020-05-27 23:26:22 | catalogs  |         6 | printer       |
+| 2020-05-27 23:30:10 | products  |        12 | Inter core i7 |
++---------------------+-----------+-----------+---------------+
+3 rows in set (0.00 sec)
+
+

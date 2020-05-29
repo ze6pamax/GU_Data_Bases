@@ -1,0 +1,32 @@
+[
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3bf"), 
+    "id" : NumberLong(1), 
+    "name" : "Процессоры"
+},
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3c0"), 
+    "id" : NumberLong(2), 
+    "name" : "Мат.платы"
+},
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3c1"), 
+    "id" : NumberLong(3), 
+    "name" : "Видеокарты"
+},
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3c2"), 
+    "id" : NumberLong(4), 
+    "name" : "Жесткий диск"
+},
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3c3"), 
+    "id" : NumberLong(5), 
+    "name" : "Оперативная память"
+},
+{ 
+    "_id" : ObjectId("5ed04a29fab1de01e55ff3c4"), 
+    "id" : NumberLong(6), 
+    "name" : "printer"
+}
+]
