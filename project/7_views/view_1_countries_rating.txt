@@ -1,0 +1,228 @@
+-- данное представление - таблица, в которой содержится информация по каждой стране о количестве лайков, по разным категориям рейтинга отелей.
+-- специфическая подборка стран получилась по топ 10 странам: Филиппины (пираты), Иран, Ирак - не очень спокойные страны, тем не менее моя база говорит, что отели там хорошие, можно ехать.
+
+create view countries_rating as
+
+select 
+    total_likes.country_name as country_name,
+    total_likes.Total,
+    exl_likes.Excellent as 'Excellent(sorted desc)',
+    vergood_likes.Very_Good,
+    average_likes.Average,
+    poor_likes.Poor,
+    terrible_likes.Terrible
+from 
+(select
+    countries.name as country_name,
+    count(likes.id) as Total
+from 
+    likes 
+join 
+    hotels_reviews 
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries
+on 
+    hotels.country_id=countries.id 
+group by 
+    country_name) as total_likes
+
+left join
+
+(select 
+    countries.name as country_name,
+    count(likes.id) as Excellent
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotels_reviews.hotel_rate='Excellent' 
+group by 
+    country_name) as exl_likes
+
+on
+
+total_likes.country_name=exl_likes.country_name
+
+left join
+
+(select 
+    countries.name as country_name,
+    count(likes.id) as Very_Good
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotels_reviews.hotel_rate='Very Good' 
+group by 
+    country_name) as vergood_likes
+
+on
+
+total_likes.country_name=vergood_likes.country_name
+
+left join
+
+(select 
+    countries.name as country_name,
+    count(likes.id) as Average
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotels_reviews.hotel_rate='Average' 
+group by 
+    country_name) as average_likes
+
+on
+
+total_likes.country_name=average_likes.country_name
+
+left join
+
+(select 
+    countries.name as country_name,
+    count(likes.id) as Poor
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotels_reviews.hotel_rate='Poor' 
+group by 
+    country_name) as poor_likes
+
+on
+
+total_likes.country_name=poor_likes.country_name
+
+left join
+
+(select 
+    countries.name as country_name,
+    count(likes.id) as Terrible
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotels_reviews.hotel_rate='Terrible' 
+group by 
+    country_name) as terrible_likes
+
+on
+
+total_likes.country_name=terrible_likes.country_name
+
+order by
+    exl_likes.Excellent desc
+;
+
+
+-- топ 10 стран
+
++--------------+-------+------------------------+-----------+---------+------+----------+
+| country_name | Total | Excellent(sorted desc) | Very_Good | Average | Poor | Terrible |
++--------------+-------+------------------------+-----------+---------+------+----------+
+| Philippines  |   289 |                     78 |        66 |      43 |   52 |       50 |
+| Iran         |   295 |                     75 |        60 |      71 |   38 |       51 |
+| Iraq         |   337 |                     69 |        70 |      60 |   64 |       74 |
+| Turkey       |   304 |                     68 |        59 |      66 |   48 |       63 |
+| South Africa |   274 |                     66 |        38 |      56 |   68 |       46 |
+| Vietnam      |   302 |                     65 |        75 |      56 |   57 |       49 |
+| Thailand     |   276 |                     62 |        57 |      35 |   75 |       47 |
+| Malaysia     |   302 |                     59 |        62 |      57 |   63 |       61 |
+| India        |   262 |                     59 |        65 |      50 |   54 |       34 |
+| Singapore    |   291 |                     59 |        54 |      55 |   61 |       62 |
++--------------+-------+------------------------+-----------+---------+------+----------+
+
+
+-- show tables
+
+mysql> show tables;
++------------------------+
+| Tables_in_tripadvisor  |
++------------------------+
+| account_info           |
+| amenties_rooms         |
+| booking_service_hotels |
+| booking_services       |
+| cities                 |
+| countries              |
+| countries_rating       |  <<----- представление появилось в списке таблиц
+| deals                  |
+| home_airports          |
+| hotel_amenties         |
+| hotel_classes          |
+| hotel_property_types   |
+| hotel_styles           |
+| hotels                 |
+| hotels_amenties        |
+| hotels_languages       |
+| hotels_reviews         |
+| hotels_rooms           |
+| languages_spoken       |
+| likes                  |
+| photos                 |
+| profile_info           |
+| room_categories        |
+| room_types             |
++------------------------+

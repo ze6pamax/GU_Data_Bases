@@ -1,0 +1,66 @@
+-- эта процедура добавляет в таблицу hotels информацию о новом отеле
+
+create procedure hotel_creation(
+
+IN hotel_name varchar(255),
+IN hotel_country varchar(100),
+IN hotel_city varchar(100),
+IN hotel_address varchar(255),
+IN hotel_phone int(11),
+IN hotel_web_site varchar(255),
+IN hotel_email varchar(255),
+IN hotel_deal varchar(100),
+IN hotel_property_type varchar(100),
+IN hotel_class varchar(100),
+IN hotel_style varchar(100),
+IN hotel_certif tinyint(1)
+)
+
+
+begin
+
+insert into hotels values 
+(NULL,
+hotel_name,
+hotel_web_site,
+hotel_phone,
+(select id from countries where name=hotel_country),
+(select id from cities where name=hotel_city),
+hotel_address,
+hotel_email,
+(select id from deals where name=hotel_deal),
+(select id from hotel_property_types where name=hotel_property_type),
+(select id from hotel_classes where name=hotel_class),
+(select id from hotel_styles where name=hotel_style),
+hotel_certif,
+now(),
+1);
+
+
+end//
+
+-- тестовая строка
+
+mysql> call hotel_creation('hotel_test','Russia','Moscow','Test','123456','www.test.ru','test@test.ru','Free cancellation','B&Bs & Inns','3 stars','Budget',0)//
+Query OK, 1 row affected (0.03 sec)
+
+-- результат
+
+mysql> select * from hotels where name='hotel_test' \G
+*************************** 1. row ***************************
+              id: 10001
+            name: hotel_test
+        web_site: www.test.ru
+           phone: 123456
+      country_id: 24
+         city_id: 52
+         address: Test
+           email: test@test.ru
+         deal_id: 1
+property_type_id: 2
+  hotel_class_id: 3
+  hotel_style_id: 1
+      hotel_cert: 0
+      created_at: 2020-06-14 17:31:55
+ hotel_amenty_id: 1
+1 row in set (0.01 sec)

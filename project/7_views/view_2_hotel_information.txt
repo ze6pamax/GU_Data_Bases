@@ -1,0 +1,92 @@
+-- в данном представлении собрана вся информация об отеле -адрес, класс, рейтинг, средняя цена за ночь, количество отзывов.
+Можно ограничить доступ к таблицам базы, и работать с этой большой таблицей.
+
+create view hotel_info as
+
+select
+    countries.name as Country,
+    cities.name as City,
+    hotels.name as 'Hotel Name',
+    concat(countries.name,", ",cities.name,", ",address) as Address,
+    hotels.phone as 'Phone',
+    web_site as 'Web-site',
+    email as 'Email',
+    deals.name as 'Hotel service',
+    hotel_property_types.name as 'Hotel type',
+    hotel_classes.name as 'Hotel class',
+    hotel_styles.name as 'Hotel style',
+    if(hotel_cert=0,'No','Yes') as 'Hotel Certificate',
+    concat(avg(hotels_rooms.avgprice),' Rub.') as 'Average Price per night',
+    year(hotels.created_at) as 'On Tripadvisor since',
+    reviews.review_nr as 'Nr of Reviews'
+from 
+    hotels
+join
+    countries
+on
+    countries.id=hotels.country_id
+join
+    cities
+on
+    cities.id=hotels.city_id
+join
+    deals
+on
+    deals.id=hotels.deal_id
+join
+    hotel_property_types
+on
+    hotel_property_types.id=hotels.property_type_id
+join
+    hotel_classes
+on
+    hotel_classes.id=hotels.hotel_class_id
+join 
+    hotel_styles
+on
+    hotel_styles.id=hotels.hotel_style_id
+join
+    (select hotel_id, count(hotels_reviews.id) as review_nr from hotels_reviews join hotels on hotels.id=hotels_reviews.hotel_id group by hotel_id) as reviews
+on
+    reviews.hotel_id=hotels.id
+join 
+    hotels_rooms
+on
+    hotels_rooms.hotel_id=hotels.id
+group by 
+    hotels.id
+order by
+    reviews.review_nr desc
+;
+
+mysql> show tables;
++------------------------+
+| Tables_in_tripadvisor  |
++------------------------+
+| account_info           |
+| amenties_rooms         |
+| booking_service_hotels |
+| booking_services       |
+| cities                 |
+| countries              |
+| countries_rating       |
+| deals                  |
+| home_airports          |
+| hotel_amenties         |
+| hotel_classes          |
+| hotel_info             |  <<<-----представление "Информация об отеле"
+| hotel_property_types   |
+| hotel_styles           |
+| hotels                 |
+| hotels_amenties        |
+| hotels_languages       |
+| hotels_reviews         |
+| hotels_rooms           |
+| languages_spoken       |
+| likes                  |
+| photos                 |
+| profile_info           |
+| room_categories        |
+| room_types             |
++------------------------+
+

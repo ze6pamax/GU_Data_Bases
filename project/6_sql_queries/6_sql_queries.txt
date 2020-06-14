@@ -1,0 +1,291 @@
+-- Сколько отелей на Tripadvisor в Москве
+
+select
+    count(id) as hotel_nr 
+from 
+    hotels
+where 
+    city_id=
+    (select id from cities where name='Moscow');
+
+
++----------+
+| hotel_nr |
++----------+
+|      217 |
++----------+
+
+-- В каких городах на Tripadvisor больше всего отелей 
+
+select 
+    cities.name,
+    count(hotels.id) as hotel_nr 
+from 
+    hotels 
+join
+    cities 
+on 
+    hotels.city_id=cities.id 
+group by 
+    cities.name 
+order by 
+    hotel_nr desc 
+limit 10;
+
++--------------+----------+
+| name         | hotel_nr |
++--------------+----------+
+| Yangon       |      296 |
+| Khartoum     |      295 |
+| Bogotá       |      292 |
+| Singapore    |      290 |
+| Santiago     |      290 |
+| Istanbul     |      287 |
+| Luanda       |      287 |
+| Johannesburg |      285 |
+| Dhaka        |      282 |
+| Seoul        |      282 |
++--------------+----------+
+
+
+-- Топ 10 отелей по количеству отзывов и город, где они расположены:
+
+select 
+    hotels.name,
+    cities.name,
+    count(hotels_reviews.id) as reviews_nr 
+from 
+    hotels_reviews 
+join 
+    hotels 
+on 
+    hotels_reviews.hotel_id=hotels.id 
+join 
+    cities 
+on 
+    cities.id=hotels.city_id 
+group by 
+    hotels_reviews.hotel_id 
+order by 
+    reviews_nr desc
+limit 10;
+
++------------------------------+---------------+------------+
+| name                         | name          | reviews_nr |
++------------------------------+---------------+------------+
+| Olson, Kuvalis and Toy       | New York City |          6 |
+| Schmidt-Treutel              | Lagos         |          6 |
+| Prohaska-Walter              | Dhaka         |          6 |
+| Green-Goyette                | Istanbul      |          6 |
+| Ernser-Treutel               | Baghdad       |          6 |
+| Greenholt Group              | Bangkok       |          6 |
+| West, Waters and Cruickshank | Singapore     |          5 |
+| Stamm, Parisian and Wolf     | Manila        |          5 |
+| Rolfson-Kuvalis              | Tokyo         |          5 |
+| Treutel-Beer                 | Kinshasa      |          5 |
++------------------------------+---------------+------------+
+
+-- Топ 10 стран по количеству отелей, где говорят на Русском языке + все отели в базе (TOTAL), где говорят на русском языке:
+
+(select 
+    countries.name as country_name,
+    count(hotels.id) as hotels_nr 
+from 
+    hotels 
+join 
+    hotels_languages
+on 
+    hotels.id=hotels_languages.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+join 
+    languages_spoken 
+on 
+    languages_spoken.id=hotels_languages.language_spoken_id 
+where 
+    language_spoken_id=(select id from languages_spoken where lang='Russian') 
+group by 
+    countries.name 
+order by 
+    hotels_nr desc 
+limit 10)
+
+union
+
+(select 
+    'TOTAL',
+    count(hotels.id) as hotels_nr 
+from 
+    hotels 
+join 
+    hotels_languages 
+on 
+    hotels.id=hotels_languages.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+join 
+    languages_spoken 
+on 
+    languages_spoken.id=hotels_languages.language_spoken_id
+where 
+    language_spoken_id=(select id from languages_spoken where lang='Russian'));
+
++---------------+-----------+
+| country_name  | hotels_nr |
++---------------+-----------+
+| Russia        |        13 |
+| Singapore     |         9 |
+| Sudan         |         9 |
+| Vietnam       |         9 |
+| United States |         9 |
+| Thailand      |         9 |
+| Saudi Arabia  |         9 |
+| Iran          |         8 |
+| Turkey        |         8 |
+| Iraq          |         8 |
+| TOTAL         |       238 |
++---------------+-----------+
+
+-- Количество ревью, которые были сделаны за последний месяц
+
+select count(id) as nr_reviews_lastmonth from hotels_reviews where year(created_at)=2020 and month(created_at)=6;
+
++----------------------+
+| nr_reviews_lastmonth |
++----------------------+
+|                   25 |
++----------------------+
+
+-- Отели в Париже, их цена,количество отзывов и количество звезд
+
+select
+    hotels.name,     
+    concat(round(avgprice/1000,0)," Thd. Rub.") as price_per_night,     
+    hotel_classes.name,     
+    reviews_nr.nr_reviews 
+from      
+    hotels  
+join      
+    hotels_rooms  
+on     
+    hotels.id=hotels_rooms.hotel_id 
+join     
+    (select hotel_id,count(hotels_reviews.id) as nr_reviews from hotels_reviews join hotels on hotels.id=hotels_reviews.hotel_id where city_id=(select id from cities where name='Paris') group by hotel_id) as reviews_nr 
+on     
+    hotels.id=reviews_nr.hotel_id 
+join     
+    hotel_classes 
+on     
+    hotel_classes.id=hotels.hotel_class_id 
+where     
+    hotels_rooms.avgprice<(select avg(hotels_rooms.avgprice) from hotels_rooms join hotels on hotels.id=hotels_rooms.hotel_id where city_id=(select id from cities where name='Paris')) 
+order by      
+    avgprice desc;
+    
++---------------------------------+-----------------+---------+------------+
+| name                            | price_per_night | name    | nr_reviews |
++---------------------------------+-----------------+---------+------------+
+| Weber, Roberts and Hettinger    | 42038 Thd. Rub. | 3 stars |          1 |
+| Mitchell, Schultz and Gulgowski | 10840 Thd. Rub. | 1 star  |          1 |
+| Schoen, Johns and Wuckert       | 2333 Thd. Rub.  | 1 star  |          2 |
+| Schroeder, Harber and Jerde     | 1091 Thd. Rub.  | 3 stars |          1 |
+| Keebler Inc                     | 966 Thd. Rub.   | 2 stars |          1 |
+| Schiller-Schultz                | 958 Thd. Rub.   | 1 star  |          1 |
+| Morar Inc                       | 635 Thd. Rub.   | 3 stars |          1 |
+| Kozey-Balistreri                | 626 Thd. Rub.   | 2 stars |          2 |
+| Ferry-Kuvalis                   | 58 Thd. Rub.    | 4 stars |          1 |
++---------------------------------+-----------------+---------+------------+
+
+-- Топ стран, где путешественники поставили оценку Excellent их отелям
+
+select 
+    countries.name,
+    count(likes.id) as nr_likes_excellent 
+from 
+    likes 
+join 
+    hotels_reviews
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+where 
+    hotel_rate='Excellent' 
+group by 
+    countries.name 
+order by 
+    nr_likes_excellent desc 
+limit 10;
+
++--------------+--------------------+
+| name         | nr_likes_excellent |
++--------------+--------------------+
+| Philippines  |                 78 |
+| Iran         |                 75 |
+| Iraq         |                 69 |
+| Turkey       |                 68 |
+| South Africa |                 66 |
+| Vietnam      |                 65 |
+| Thailand     |                 62 |
+| Singapore    |                 59 |
+| India        |                 59 |
+| Malaysia     |                 59 |
++--------------+--------------------+
+
+-- Топ стран, которым путешественники поставили больше всего лайков, с указанием страны, откуда сам путешественник
+
+select 
+    countries.name as to_country,
+    account_country.country as from_country,
+    count(likes.id) as nr_likes 
+from 
+    likes 
+join 
+    hotels_reviews 
+on 
+    likes.hotel_review_id=hotels_reviews.id 
+join 
+    hotels 
+on 
+    hotels.id=hotels_reviews.hotel_id 
+join 
+    countries 
+on 
+    hotels.country_id=countries.id 
+join 
+    (select account_info.id as id,countries.name as country from account_info join home_airports on home_airports.id=account_info.home_airport_id join countries on home_airports.country_id=countries.id) as account_country 
+on 
+    likes.account_id=account_country.id 
+where 
+    hotel_rate='Excellent' 
+group by 
+    countries.name,
+    account_country.country 
+order by 
+    nr_likes desc 
+limit 10;
+
++--------------+---------------+----------+
+| to_country   | from_country  | nr_likes |
++--------------+---------------+----------+
+| South Africa | United States |       20 |
+| Iran         | United States |       17 |
+| Pakistan     | United States |       15 |
+| Thailand     | China         |       15 |
+| Egypt        | China         |       15 |
+| Egypt        | United States |       14 |
+| Vietnam      | China         |       14 |
+| France       | United States |       13 |
+| Malaysia     | China         |       13 |
+| Turkey       | United States |       13 |
++--------------+---------------+----------+

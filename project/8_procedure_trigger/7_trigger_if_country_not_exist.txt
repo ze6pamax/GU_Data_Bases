@@ -1,0 +1,21 @@
+-- данный триггер обнуляет сертификат у отеля, если у него больше половину отрицательных отзывов, и возвращает сертификат, если отзывов положительных становится больше отрицательных
+ 
+create trigger hotel_cert_changing
+    after insert on hotels_reviews
+    for each row 
+    begin    
+    declare total_reviews int;
+    declare bad_reviews int;
+    select count(id) into total_reviews from hotels_reviews where hotel_id=new.hotel_id;
+    select count(id) into bad_reviews from hotels_reviews where hotel_id=new.hotel_id and hotel_rate in ('Poor','Terrible');
+    if bad_reviews > total_reviews/2 then
+    update hotels set hotel_cert=0 where id=new.hotel_id;
+    end if;
+    if bad_reviews < total_reviews/2 then
+    update hotels set hotel_cert=1 where id=new.hotel_id;
+    end if;
+end//
+
+-- пример для проверки
+
+insert into hotels_reviews values (NULL,'mam90',1,'Poor','test','test','Solo','Very Good','Very Good','Very Good','Budget','ohohoh',now());
