@@ -32,7 +32,9 @@ CREATE TABLE `account_info` (
   `email` varchar(255) NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `home_airports_home_airport_id_fk` (`home_airport_id`),
+  CONSTRAINT `account_info_ibfk_1` FOREIGN KEY (`home_airport_id`) REFERENCES `home_airports` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10001 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -60,7 +62,11 @@ DROP TABLE IF EXISTS `booking_service_hotels`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `booking_service_hotels` (
   `hotel_id` int(10) unsigned NOT NULL,
-  `booking_service_id` int(10) unsigned NOT NULL
+  `booking_service_id` int(10) unsigned NOT NULL,
+  KEY `hotels_bookservhotels_hotel_id_fk` (`hotel_id`),
+  KEY `booking_services_booking_service_id_fk` (`booking_service_id`),
+  CONSTRAINT `booking_service_hotels_ibfk_1` FOREIGN KEY (`hotel_id`) REFERENCES `hotels` (`id`),
+  CONSTRAINT `booking_service_hotels_ibfk_2` FOREIGN KEY (`booking_service_id`) REFERENCES `booking_services` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -155,7 +161,11 @@ CREATE TABLE `home_airports` (
   `country_id` int(10) unsigned NOT NULL,
   `city_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `airport_name_uk` (`airport_name`)
+  UNIQUE KEY `airport_name_uk` (`airport_name`),
+  KEY `countries_country_id_fk` (`country_id`),
+  KEY `cities_city_id_fk` (`city_id`),
+  CONSTRAINT `home_airports_ibfk_1` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+  CONSTRAINT `home_airports_ibfk_2` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=137 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -293,7 +303,9 @@ DROP TABLE IF EXISTS `hotels_amenties`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `hotels_amenties` (
   `hotel_id` int(10) unsigned NOT NULL,
-  `amenties_hotel_id` int(10) unsigned NOT NULL
+  `amenties_hotel_id` int(10) unsigned NOT NULL,
+  KEY `hotel_amenties_amenties_hotel_id_fk` (`amenties_hotel_id`),
+  CONSTRAINT `hotels_amenties_ibfk_1` FOREIGN KEY (`amenties_hotel_id`) REFERENCES `hotel_amenties` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -306,7 +318,11 @@ DROP TABLE IF EXISTS `hotels_languages`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `hotels_languages` (
   `hotel_id` int(10) unsigned NOT NULL,
-  `language_spoken_id` int(10) unsigned NOT NULL
+  `language_spoken_id` int(10) unsigned NOT NULL,
+  KEY `hotels_hotellang_hotel_id_fk` (`hotel_id`),
+  KEY `languages_spoken_language_spoken_id_fk` (`language_spoken_id`),
+  CONSTRAINT `hotels_languages_ibfk_1` FOREIGN KEY (`hotel_id`) REFERENCES `hotels` (`id`),
+  CONSTRAINT `hotels_languages_ibfk_2` FOREIGN KEY (`language_spoken_id`) REFERENCES `languages_spoken` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -331,7 +347,9 @@ CREATE TABLE `hotels_reviews` (
   `expression_hotel` enum('Budget','Luxary','Mid-range') DEFAULT NULL,
   `tip_for_traveller` varchar(20) NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `hotels_reviews_hotel_id_fk` (`hotel_id`),
+  CONSTRAINT `hotels_reviews_ibfk_1` FOREIGN KEY (`hotel_id`) REFERENCES `hotels` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10016 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -379,7 +397,11 @@ CREATE TABLE `hotels_rooms` (
   `avgprice` float NOT NULL,
   `adults_nr` int(10) NOT NULL,
   `children_nr` int(10) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `hotels_hotel_id_fk` (`hotel_id`),
+  KEY `room_categories_room_category_id_fk` (`room_category_id`),
+  CONSTRAINT `hotels_rooms_ibfk_1` FOREIGN KEY (`hotel_id`) REFERENCES `hotels` (`id`),
+  CONSTRAINT `hotels_rooms_ibfk_2` FOREIGN KEY (`room_category_id`) REFERENCES `room_categories` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -409,7 +431,11 @@ CREATE TABLE `likes` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `hotel_review_id` int(10) unsigned NOT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `hotels_reviews_hotel_review_id_fk` (`hotel_review_id`),
+  KEY `account_info_likes_account_id_fk` (`account_id`),
+  CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`hotel_review_id`) REFERENCES `hotels_reviews` (`id`),
+  CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `account_info` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10003 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -430,7 +456,13 @@ CREATE TABLE `photos` (
   `account_id` int(10) unsigned NOT NULL,
   `hotel_id` int(10) unsigned NOT NULL,
   `hotel_review_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `account_info_photos_account_id_fk` (`account_id`),
+  KEY `hotels_photos_hotel_id_fk` (`hotel_id`),
+  KEY `hotels_reviews_photos_hotel_review_id_fk` (`hotel_review_id`),
+  CONSTRAINT `photos_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account_info` (`id`),
+  CONSTRAINT `photos_ibfk_2` FOREIGN KEY (`hotel_id`) REFERENCES `hotels` (`id`),
+  CONSTRAINT `photos_ibfk_3` FOREIGN KEY (`hotel_review_id`) REFERENCES `hotels_reviews` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -445,7 +477,11 @@ CREATE TABLE `profile_info` (
   `account_id` int(10) unsigned NOT NULL,
   `username` varchar(255) NOT NULL,
   `current_city_id` int(10) unsigned NOT NULL,
-  UNIQUE KEY `username_uk` (`username`)
+  UNIQUE KEY `username_uk` (`username`),
+  KEY `account_info_account_id_fk` (`account_id`),
+  KEY `cities_current_city_id_fk` (`current_city_id`),
+  CONSTRAINT `profile_info_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account_info` (`id`),
+  CONSTRAINT `profile_info_ibfk_2` FOREIGN KEY (`current_city_id`) REFERENCES `cities` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -522,4 +558,4 @@ CREATE TABLE `room_types` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-06-14 19:32:02
+-- Dump completed on 2020-06-14 20:20:48
